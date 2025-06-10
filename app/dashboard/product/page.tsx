@@ -12,52 +12,58 @@ const ProductPage = () => {
   const [showCart, setShowCart] = useState(false);
   const router = useRouter();
 
+  const formatRupiah = (number: number) =>
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+    }).format(number);
+
   const products = [
     {
       name: "Butts on Things Game",
-      price: "Rp 216.876",
+      price: 216876,
       image: "/images/butts-on-things.png",
       category: "Party Game",
     },
     {
       name: "Game Sushi Go!",
-      price: "Rp 124.567",
+      price: 124567,
       image: "/images/sushi-go.png",
       category: "Card Game",
     },
     {
       name: "Game Buildzi",
-      price: "Rp 109.999",
+      price: 109999,
       image: "/images/buildzi.png",
       category: "Dice Game",
     },
     {
       name: "Hitler’s Secret Game",
-      price: "Rp 115.678",
+      price: 115678,
       image: "/images/hitler-secret.png",
       category: "Party Game",
     },
     {
       name: "Game Gorilla Pound",
-      price: "Rp 157.985",
+      price: 157985,
       image: "/images/gorilla-pound.png",
       category: "Dice Game",
     },
     {
       name: "Ultimate Werewolf: Revised Edition",
-      price: "Rp 355.764",
+      price: 355764,
       image: "/images/ultimate-werewolf.png",
       category: "Board Game",
     },
     {
       name: "Abduction: Basic Game",
-      price: "Rp 231.456",
+      price: 231456,
       image: "/images/abduction.png",
       category: "Board Game",
     },
     {
       name: "Nightmare Before Christmas",
-      price: "Rp 452.854",
+      price: 452854,
       image: "/images/nightmare-before.png",
       category: "Card Game",
     },
@@ -73,7 +79,14 @@ const ProductPage = () => {
   });
 
   const addToCart = (product: any) => {
-    setCartItems([...cartItems, product]);
+    const index = cartItems.findIndex((item) => item.name === product.name);
+    if (index >= 0) {
+      const updatedCart = [...cartItems];
+      updatedCart[index].quantity += 1;
+      setCartItems(updatedCart);
+    } else {
+      setCartItems([...cartItems, { ...product, quantity: 1 }]);
+    }
   };
 
   const removeFromCart = (index: number) => {
@@ -82,14 +95,18 @@ const ProductPage = () => {
     setCartItems(updatedCart);
   };
 
+  const totalHarga = cartItems.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
+
   const goToCheckout = () => {
-    router.push("/checkout");
+    localStorage.setItem("cartItems", JSON.stringify(cartItems));
+    router.push("/dashboard/checkout");
   };
 
   return (
     <div className="min-h-screen bg-[#fff000] text-black px-6 py-10 font-sans relative">
-
-      {/* Cart Icon */}
       <div className="absolute top-6 right-6 z-50">
         <button
           onClick={() => setShowCart(!showCart)}
@@ -104,9 +121,8 @@ const ProductPage = () => {
         </button>
       </div>
 
-      {/* Shopping Cart Panel */}
       {showCart && (
-        <div className="absolute top-16 right-6 bg-white shadow-lg border border-[#d72323] rounded-lg w-72 max-h-[70vh] overflow-auto z-40">
+        <div className="absolute top-16 right-6 bg-white shadow-lg border border-[#d72323] rounded-lg w-80 max-h-[80vh] overflow-auto z-40">
           <div className="flex justify-between items-center p-4 border-b border-gray-300">
             <h3 className="font-bold text-[#d72323]">Shopping Cart</h3>
             <button onClick={() => setShowCart(false)}>
@@ -121,7 +137,7 @@ const ProductPage = () => {
                 {cartItems.map((item, index) => (
                   <li
                     key={index}
-                    className="p-4 flex items-center justify-between space-x-4"
+                    className="p-4 flex flex-col space-y-2"
                   >
                     <div className="flex items-center space-x-4">
                       <img
@@ -129,22 +145,31 @@ const ProductPage = () => {
                         alt={item.name}
                         className="w-10 h-10 object-contain"
                       />
-                      <div>
+                      <div className="flex-1">
                         <p className="text-sm font-semibold">{item.name}</p>
-                        <p className="text-sm text-[#d72323]">{item.price}</p>
+                        <p className="text-xs text-gray-500">
+                          {formatRupiah(item.price)} × {item.quantity}
+                        </p>
+                        <p className="text-sm text-[#d72323] font-semibold">
+                          {formatRupiah(item.price * item.quantity)}
+                        </p>
                       </div>
+                      <button
+                        onClick={() => removeFromCart(index)}
+                        className="text-gray-400 hover:text-red-500"
+                        title="Hapus dari keranjang"
+                      >
+                        <XMarkIcon className="w-5 h-5" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => removeFromCart(index)}
-                      className="text-gray-400 hover:text-red-500"
-                      title="Hapus dari keranjang"
-                    >
-                      <XMarkIcon className="w-5 h-5" />
-                    </button>
                   </li>
                 ))}
               </ul>
               <div className="p-4 border-t border-gray-300 space-y-2">
+                <div className="flex justify-between font-bold text-sm">
+                  <span>Total:</span>
+                  <span className="text-[#d72323]">{formatRupiah(totalHarga)}</span>
+                </div>
                 <button
                   onClick={() => setCartItems([])}
                   className="w-full bg-red-500 text-white text-sm py-2 rounded hover:bg-red-600"
@@ -163,7 +188,6 @@ const ProductPage = () => {
         </div>
       )}
 
-      {/* Search Input */}
       <div className="mb-6 mt-4">
         <input
           type="text"
@@ -174,16 +198,14 @@ const ProductPage = () => {
         />
       </div>
 
-      {/* Kategori */}
       <div className="flex flex-wrap gap-3 mb-6">
         {categories.map((category, index) => (
           <button
             key={index}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition-all
-              ${
-                selectedCategory === category
-                  ? "bg-[#d72323] text-white"
-                  : "bg-white text-[#d72323] border border-[#d72323]"
+              ${selectedCategory === category
+                ? "bg-[#d72323] text-white"
+                : "bg-white text-[#d72323] border border-[#d72323]"
               }`}
             onClick={() => setSelectedCategory(category)}
           >
@@ -192,10 +214,8 @@ const ProductPage = () => {
         ))}
       </div>
 
-      {/* Title */}
       <h1 className="text-3xl font-extrabold mb-6">OUR PRODUCT</h1>
 
-      {/* Produk */}
       {filteredProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {filteredProducts.map((product, index) => (
@@ -211,7 +231,7 @@ const ProductPage = () => {
               <h2 className="text-center font-bold text-sm leading-tight">
                 {product.name}
               </h2>
-              <p className="mt-1 text-md text-[#d72323] font-bold">{product.price}</p>
+              <p className="mt-1 text-md text-[#d72323] font-bold">{formatRupiah(product.price)}</p>
               <div className="flex mt-2 space-x-1 text-[#000] text-sm mb-3">
                 <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
               </div>
